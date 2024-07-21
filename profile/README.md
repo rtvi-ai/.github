@@ -1,5 +1,7 @@
 # RTVI-AI: an open standard for real-time voice [and video] inference
 
+![rtvi service sketch](./rtvi-top-sketch.png]
+
 This GitHub org contains:
 
   - open source SDK code
