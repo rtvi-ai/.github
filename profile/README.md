@@ -1,4 +1,4 @@
-# RTVI-AI: an open standard for real-time voice [and video] inference
+# RTVI-AI: an open standard for Real-Time Voice [and Video] Inference
 
 ![rtvi cloud service sketch](images/rtvi-top-sketch.jpg)
 
