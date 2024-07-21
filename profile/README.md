@@ -1,6 +1,6 @@
 # RTVI-AI: an open standard for real-time voice [and video] inference
 
-![rtvi service sketch](images/rtvi-top-sketch.png)
+![rtvi cloud service sketch](images/rtvi-top-sketch.jpg)
 
 This GitHub org contains:
 
@@ -58,19 +58,19 @@ To skip straight to geting started with voice-to-voice JavaScript and React deve
 
 Conceptually, a voice-to-voice AI application looks like this.
 
-[ diagram: client <-> voice loop in the cloud ]
+![rtvi voice-to-voice loop](images/rtvi-voice-loop.jpg)
 
 This is a conceptual diagram rather than an architecture diagram. The voice loop in the cloud might use one, three, or many models to perform audio input processing, language-level processing, and audio output. Real-world voice AI applications often use a collection of models, combined with application code that orchestrates how the models are used.
 
-Here's a more architecture-y diagram for a voice AI application that collects information from a patient prior to a healthcare visit.
+Here's a diagram for a voice AI application that collects information from a patient prior to a healthcare visit. This workflow follows a flexible conversational script and makes function calls out to an external system.
 
-[ diagram: tool use block diagram ]
+![rtvi tool use loop](images/rtvi-tool-use.jpg)
 
 Good standards and SDKs make easy things easy, and hard things possible. A good SDK design is flexible enough to support future capabilities and the evolution of related standards. Finally, we live in a cross-platform world; the Web, iOS, Android, Linux, macOS, and Windows all need first-class support.
 
 Here are the client-side "functional layers" of the RTVI stack.
 
-[ diagram: client-side layers ]
+![rtvi tool use loop](images/rtvi-client-stack.jpg)
 
 On the cloud side, implementors have a lot of flexibility. Cloud implementations need to send and receive RTVI events and data structures. But the details of how that happens don't matter to client code!
 
@@ -80,7 +80,7 @@ Having said that, reference implementations are helpful. The [Pipecat open sourc
 
 Here's one way to build RTVI infrastructure using Pipecat or a similar real-time AI library.
 
-[ diagram: transport, media servers, pipecat ]
+![rtvi pipecat infrastructure example](images/rtvi-pipecat.jpg)
 
 # Docs, events and data structures, and extensions
 
