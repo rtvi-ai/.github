@@ -9,7 +9,7 @@ This GitHub org contains:
 
 Our goal here is to make it easy to build AI **voice-to-voice** and **real-time video** applications.
 
-  - Applications developers should be able to write code that can use any inference service.
+  - Application developers should be able to write code that can use any inference service.
   - Inference services should be able to leverage open source for the complicated, client-side developer tooling needed for real-time multimedia.
   - Any developer should be able to trivially stand up real-time AI infrastructure for small-scale use, testing, or prototyping.
 
