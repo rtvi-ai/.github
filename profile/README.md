@@ -13,6 +13,8 @@ Our goal here is to make it easy to build AI **voice-to-voice** and **real-time 
   - Inference services should be able to leverage open source for the complicated, client-side developer tooling needed for real-time multimedia.
   - Any developer should be able to trivially stand up real-time AI infrastructure for small-scale use, testing, or prototyping.
 
+If you want, feel free to pop over and check out an [RTVI voice chat demo](https://demo.rtvi.ai/) and then come back here.
+
 # What client-side code looks like
 
 Here's a voice-to-voice AI "hello world" in Javascript.
@@ -52,7 +54,7 @@ The `baseUrl` parameter determines what inference service the client uses. This 
   - configuration of the workflow "pipeline"
   - what features are automatically enabled
   
-To skip straight to geting started with voice-to-voice JavaScript and React development, [go here].
+To skip straight to geting started with voice-to-voice JavaScript and React development, [go here](https://github.com/rtvi-ai/rtvi-client-web).
 
 # The real-time AI stack
 
@@ -84,9 +86,9 @@ Here's one way to build RTVI infrastructure using Pipecat or a similar real-time
 
 # Docs, events and data structures, and extensions
 
-API documentation of RTVI SDKs is in each repo. [iOS], [Android], [JavaScript]
+API documentation of RTVI SDKs is in each repo. [JavaScript and React](https://github.com/rtvi-ai/rtvi-client-web). (iOS and Android coming soon.)
 
-All the standard RTVI events and data structures are in the [standards-docs] repo.
+All the standard RTVI events and data structures will be in a [standards-docs](.) repo shortly.
 
 Today, the standard includes the following core building blocks:
 
