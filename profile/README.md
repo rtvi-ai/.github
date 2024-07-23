@@ -24,7 +24,7 @@ Here's a voice-to-voice AI "hello world" in Javascript.
 // Start a multi-turn voice-to-voice session in a web app
 //
 
-import { VoiceClient } from "@realtime-ai/voice-sdk";
+import { VoiceClient } from "realtime-ai"";
 
 function myTrackHandler(track, participant, voiceClient) {
     if (participant.isLocal || track.kind !== 'audio') {
