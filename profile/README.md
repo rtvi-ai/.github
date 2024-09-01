@@ -13,6 +13,19 @@ Our goal here is to make it easy to build AI **voice-to-voice** and **real-time 
   - Inference services should be able to leverage open source for the complicated, client-side developer tooling needed for real-time multimedia.
   - Any developer should be able to trivially stand up real-time AI infrastructure for small-scale use, testing, or prototyping.
 
+Jump straight to resources:
+  - client SDKs
+    - [Web and React](https://github.com/rtvi-ai/rtvi-client-web)
+    - [iOS](https://github.com/rtvi-ai/rtvi-client-ios-daily)
+    - [Android](https://github.com/rtvi-ai/rtvi-client-android-daily)
+    - [React Native](https://github.com/rtvi-ai/rtvi-client-react-native-daily)
+  - [API reference documentation](https://docs.rtvi.ai/introduction)
+  - Web demo [source code](https://github.com/rtvi-ai/rtvi-web-demo) and [live demo](https://demo.dailybots.ai/)
+  - Infrastructure
+    - [Backend/infrastructure examples](https://github.com/rtvi-ai/rtvi-infra-examples)
+    - Pipecat server-side RTVI implementation [complete source code](https://github.com/pipecat-ai/pipecat/blob/main/src/pipecat/processors/frameworks/rtvi.py)
+
+
 # What client-side code looks like
 
 Here's a voice-to-voice AI "hello world" in Javascript.
@@ -22,10 +35,10 @@ Here's a voice-to-voice AI "hello world" in Javascript.
 // Start a multi-turn voice-to-voice session in a web app
 //
 
-import { VoiceClient } from "@realtime-ai/voice-sdk";
+import { VoiceClient } from "@realtime-ai";
 
 function myTrackHandler(track, participant, voiceClient) {
-    if (participant.isLocal || track.kind !== 'audio') {
+    if (participant.local || track.kind !== 'audio') {
       return;
     }
     let audioElement = document.createElement('audio');
@@ -37,7 +50,7 @@ function myTrackHandler(track, participant, voiceClient) {
 const voiceClient = new VoiceClient({
     baseUrl,
     enableMic: true,
-    eventHandlers: {
+    callbacks: {
       trackStarted: myTrackHandler,
     }
 });
@@ -52,7 +65,6 @@ The `baseUrl` parameter determines what inference service the client uses. This 
   - configuration of the workflow "pipeline"
   - what features are automatically enabled
   
-To skip straight to geting started with voice-to-voice JavaScript and React development, [go here].
 
 # The real-time AI stack
 
@@ -82,240 +94,134 @@ Here's one way to build RTVI infrastructure using Pipecat or a similar real-time
 
 ![rtvi pipecat infrastructure example](images/rtvi-pipecat.jpg)
 
-# Docs, events and data structures, and extensions
+# Architecture — events and services
 
-API documentation of RTVI SDKs is in each repo. [iOS], [Android], [JavaScript]
+RTVI is a set of abstractions and a messages format for communicating between inference servers and clients.
 
-All the standard RTVI events and data structures are in the [standards-docs] repo.
+The RTVI architecture defines:
+  - A small number of events that allow clients and servers to communicate about audio and video streams, session state, metrics, and errors.
+  - A generic "services" mechanism
+    - Inference servers expose "services."
+    - Services are abstract containers for configuration and actions. In a typical implementation, a service will map to an element in a real-time orchestration pipeline. But servers can define and implement services however they want to. RTVI defines an interface for service configuration and actions, but does not define any specific services.
 
-Today, the standard includes the following core building blocks:
+## Events
 
-  - audio and voice streams
+RTVI defines the following standard event messages. Client implementations can expose these via event handlers or callbacks.
+
+  - transport-state-changed
+  - connected
+  - disconnected
+  - client-ready
+  - bot-ready
+  - config
+  - bot-disconnected
+  - generic-message
+  - error
+  - track-started
+  - track-stopped
+  - metrics
+  - user-started-speaking
+  - user-stopped-speaking
+  - bot-started-speaking
+  - bot-stopped-speaking
+  - user-transcription
+  - bot-transcription
+
+See the [RTVI JavaScript SDK documentation](https://docs.rtvi.ai/api-reference/messages-and-events) for a client-side view of events and callbacks.
+
+## Services
+
+An inference server will usually expose a set of services that a client can configure and trigger actions on.
+
+For example, a typical voice-to-voice inference server will define `stt`, `llm`, and `tts` services.
+
+Each of these services will have options that can be configured from the client or via REST APIs. For example, the `llm` service will allow a specific `model` to be specified.
+
+Here is an example services configuration.
+
+```
+[
+  {
+    "service": "vad",
+    "options": [{ "name": "params", "value": { "stop_secs": 3.0 } }]
+  },
+  {
+    "service": "tts",
+    "options": [
+      { "name": "voice", "value": "79a125e8-cd45-4c13-8a67-188112f4dd22" }
+    ]
+  },
+  {
+    "service": "llm",
+    "options": [
+      {
+        "name": "model",
+        "value": "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo"
+      },
+      {
+        "name": "initial_messages",
+        "value": [
+          {
+            "role": "system",
+            "content": `You are a assistant called ExampleBot. You can ask me anything.
+              Keep responses brief and legible.
+              Your responses will converted to audio. Please do not include any special characters in your response other than '!' or '?'.
+              Start by briefly introducing yourself.`
+          }
+        ]
+      },
+    ]
+  }
+]
+```
+
+Services may expose actions, as well.
+
+For example, a `tts` service will typically offer a `say` action.
+
+It's important to note that the RTVI standard defines the services and actions mechanisms, but not specific services and actions.
+
+The Open Source RTVI SDKs provide generic methods like [`updateConfig()`](https://docs.rtvi.ai/api-reference/client-methods#updateconfig) and [`action()`](https://docs.rtvi.ai/api-reference/client-methods#action).
+
+Calling a `tts:say` action with the reference RTVI JavaScript SDK looks like this:
+
+```
+response = await voiceClient.action({
+  service: "tts",
+  action: "say",
+  arguments: [{ name: "text", value: "Say 'Hello world!'" }],
+});
+```
+
+However, RTVI clients can certainly be written or extended to provide better developer ergonomics for specific platforms or use cases! The reference RTVI JavaScript SDK offers a [helper libraries](https://docs.rtvi.ai/api-reference/helpers/introduction) mechanism that can provide more convenient and type-safe interfaces for service configuration and actions.
+
+## Taking a step back — building blocks
+
+The RTVI standard tries to be as flexible as possible, while also being shaped to support today's core real-time AI use cases:
+
+  - voice-to-voice inference loops
+  - real-time video generation
+  - real-time computer vision
+  - multi-model and multi-model orchestration
+
+An RTVI implementation that can be used in production will generally need to provide a substantial subset of the following building blocks:
+
+  - low-latency audio and video codecs and transport
   - text input and output
   - image input and output
   - tts -> llm -> stt pipeline configuration
   - llm context management
-  - handling phrase endpointing and interruptions
-  - tool use events (function calling)
+  - effective phrase endpointing
+  - low-latency, llm context-aware, interruption handling 
+  - function calling
   - builtin tool extensions
-  - WebRTC network transport
   
-Here are some code samples showing configuration, extensibility, and
-tool use.
-  
-```javascript
-//
-// Configure built-in options such as which model to use for LLM
-// inference, which voice to use for speech output, and how phrase
-// endpointing works.
-//
-
-voiceClient = new VoiceClient({
-    baseUrl,
-    systemPrompt,
-    enableMic: true,
-    eventHandlers: {
-      trackStarted: myTrackHandler,
-    },
-    config: {
-      phrase_endpointing: { vad_timeout: 250 },
-      llm: { model: 'llama3-8b-8192' },
-      tts: { voice: 'id-145768' }
-    }
-});
-```
-
-```javascript
-//
-// Vision input via video stream. Enable a builtin "get_camera_frame"
-// tool provided by the cloud service. This tool expects the client to
-// always send a video stream. When the LLM triggers the "get_camera_frame"
-// tool, the cloud provider's implementation will grab the most recent
-// video frame as an image and add that image to the LLM inference context.
-//
-// Expected dialog flow:
-//   - user: "What do you see?"
-//   - generated voice response: "I see a person, wearing glasses, with
-//                                bookshelves in the background."
-//
-
-voiceClient = new VoiceClient({
-  baseUrl,
-  enableMic: true,
-  enableCamera: true,
-  eventHandlers: {
-    trackStarted: myTrackHandler,
-  },
-  useBuiltinTools: ['get_camera_frame'],
-});
-
-```
-
-
-```javascript
-//
-// Client-side tool use (function calling). Enable tool use responses
-// from the LLM, and handle them locally.
-//
-// Expected event flow:
-//   - user: "What's the weather in San Francisco?"
-//   - toolUseResponse event handler called
-//   - perform the "get_weather" action locally (call a function,
-//     access a database, etc.)
-//   - send the response back to the LLM using the
-//     voiceClient.sendToolResult() method
-//   - generated voice response:
-//     "The weather in San Francisco is 64 degrees and foggy."
-//
-
-function myToolUseResponseHandler(toolUseResponseJson, voiceClient) {
-  let toolUseResponse = JSON.parse(toolUseResponseJson);
-  if (!toolUseResponse?.content?.[0]?.type === 'tool_use') {
-    console.error("unexpected tool use response", toolUseResponse);
-    return;
-  }
-  let toolInfo = toolUseResponse.content[0];
-  // just return a hard-coded string for this example!
-  voiceClient.sendToolResult({
-    "role": "user",
-    "content": [
-      {
-        "type": "tool_result",
-        "tool_use_id": toolInfo.id,
-        "content": "64 degrees and foggy"
-      }
-    ]
-  });
-}
-
-voiceClient = new VoiceClient({
-  baseUrl,
-  enableMic: true,
-  enableCamera: true,
-  eventHandlers: {
-    trackStarted: myTrackHandler,
-    toolUseResponse: myToolUseResponseHandler,
-  },
-  "tools": [
-    {
-      "name": "get_weather",
-      "description": "Get the current weather in a given location",
-      "input_schema": {
-        "type": "object",
-        "properties": {
-          "location": {
-            "type": "string",
-            "description": "The city and state, e.g. San Francisco, CA"
-          }
-        },
-        "required": ["location"]
-      }
-    }
-  ],
-});
-
-```
-
-# Infrastructure and related technologies
-
-There are three major infrastructure components (non-client code/servers) in an RTVI stack.
-
-1. Network transport
-2. Orchestration
-3. AI inference
-
-(We are ignoring things like capacity scaling and global distribution. Our purview is only what happens in each individual inference "session.")
-
-## Network transport
-
-Moving audio and video across the Internet at real-time (very low) latencies requires specialized infrastructure. In general, the best approach is to build on top of a standard called [WebRTC](https://webrtcforthecurious.com/). WebRTC is a mature, stable standard and is natively supported in web browsers.
-
-The drawback of using WebRTC is that it is complicated.
-
-WebSockets are a simpler network standard that most developers are familiar with. WebSockets are fine for audio-only, sever-to-server use cases. And you can do quick-and-dirty real-time media prototypes using WebSockets. But for production use, WebSockets introduce too much latency and don't have critical features for media streaming (pacing, bandwidth estimation, buffer management, quality metrics, echo cancellation). There's a reason that WebRTC is so complicated! The media-specific features of WebRTC are necessary for delivering real-time audio and video reliably, at scale.
-
-However, some inference services will want to use WebSockets, either because they are targeting server-to-server use cases or need to interop with older systems. (For example, Twilio telephony).
-
-In addition, there will be future network protocols and standards that make sense to use for real-time AI. (For example, [Media over Quic](https://quic.video/)).
-
-RTVI's approach to flexibility and future-compatibility is to be agnostic about the specifics of a service's transport implementation, but to assume that any transport implementation is approximately as capable as WebRTC.
-
-Here, "capable" is loosely defined as "does what the use case requires." An RTVI service can implement WebSocket transport instead of WebRTC transport without impacting application code. (But that service will likely need to write a large amount of code on top of the basic WebSocket APIs to be production-quality for most use cases.)
-
-## Orchestration
-
-Orchestration means:
-  1. state management
-  2. performing multiple data processing steps
-
-RTVI's abstraction for orchestration is the **pipeline**. Inference services need to implement at least one pipeline. Some services will offer many pipeline configurations. The RTVI APIs also allow pipelines to be programatically specified from client-side code (if the inference service supports this).
-
-The pipeline abstraction provides surface area for two important client-side capabilities:
-  - configuring individual "components" of a service (on-the-fly if the service supports this)
-  - changing the processing steps (again, dynamically if the service can support this)
-
-```javascript
-//
-// Specifying which LLM to use
-//
-
-voiceClient.configure({
-  llm: { model: 'gpt-4o-mini' }
-})
-```
-
-```javascript
-//
-// Customizing the processing "pipeline."
-//
-// The pipeline is a list of processing steps. A default pipeline
-// would typically do:
-//
-//   STT -> phrase endpointing -> LLM -> TTS.
-//
-// A default pipeline will also usually manage an LLM messages context
-// automatically.
-//
-// In this hypothetical example, the client-side code overrides the 
-// default pipeline to add two additional processing steps, using
-// builtin capabilities offered by this cloud service:
-//
-//   - play a processing sound each time phrase endpointing is triggered
-//   - ignore input until a wake word is detected
-//
-
-voiceClient = new VoiceClient({
-    baseUrl,
-    enableMic: true,
-    eventHandlers: {
-      trackStarted: myTrackHandler,
-    },
-    pipeline: [
-      'wake_words_gate',
-      'phrase_endpointing',
-      'processing_sound_emitter',
-      'llm_context',
-      'llm',
-      'tts',
-      'llm_context'
-    ],
-    config: {
-      wake_words_gate: { trigger_words: ['hey computer', 'ok computer'] },
-      processing_sound_emitter: { 'sound': 'ding' }
-    }
-});
-```
-
-Inference services can implement pipelines however makes sense for their infrastructure. The pipeline abstraction is high-level and focused on how the client communicates with the service.
-
-The [Pipecat](https://github.com/pipecat-ai/pipecat) Open Source project provides tools for implementing RTVI-compatible pipelines in Python.
-
-## AI inference
-
-Actually performing inference is out of scope for RTVI!
-
-Having said that, there is lots of potential for both models and inference toolkits to evolve in more and more multi-modal and streaming-native directions. RTVI can provide some help, here, by clearly defining client-side expectations for how streams should be processed and managed.
-
 # Contributing
 
-If you'd like to contribute to RTVI, join the [Pipecat Discord](https://discord.com/invite/pipecat) or submit PRs to the various repos here. We welcome all contributions!
+If you'd like to contribute to RTVI, join the [Pipecat Discord](https://discord.com/invite/pipecat) or submit PRs to the various repos here.
+
+We welcome all contributions, including additional RTVI client SDKs, transport providers, and additions to the Pipecat server-side implementation of the RTVI standard.
+
+
+
+
