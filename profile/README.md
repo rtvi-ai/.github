@@ -1,3 +1,11 @@
+>🐈 `rtvi-ai` client repos have moved to [`pipecat-ai`](https://github.com/pipecat-ai)
+- [rtvi-client-android](https://github.com/pipecat-ai/rtvi-client-android)
+- [rtvi-client-android-daily](https://github.com/pipecat-ai/rtvi-client-android-daily)
+- [rtvi-client-ios](https://github.com/pipecat-ai/rtvi-client-ios)
+- [rtvi-client-ios-daily](https://github.com/pipecat-ai/rtvi-client-ios-daily)
+- [rtvi-client-react-native-daily](https://github.com/pipecat-ai/rtvi-client-react-native-daily)
+- [rtvi-client-web](https://github.com/pipecat-ai/rtvi-client-web)
+
 # RTVI-AI: an open standard for Real-Time Voice [and Video] Inference
 
 ![rtvi cloud service sketch](images/rtvi-top-sketch.jpg)
